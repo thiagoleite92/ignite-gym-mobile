@@ -1,23 +1,60 @@
+import * as ImagePicker from 'expo-image-picker'
+import * as FileSystem from 'expo-file-system'
 import { Button } from '@components/Button'
 import { Input } from '@components/Input'
 import { ScreenHeader } from '@components/ScreenHeader'
 import { UserPhoto } from '@components/UserPhoto'
 import { Text, Center, VStack, Heading } from '@gluestack-ui/themed'
-import { ScrollView, TouchableOpacity } from 'react-native'
+import { Alert, ScrollView, TouchableOpacity } from 'react-native'
+import { useState } from 'react'
 
 export function Profile() {
+  const [userPhoto, setUserPhoto] = useState(
+    'https://github.com/thiagoleite92.png',
+  )
+
+  const handleUserPhotoSelect = async () => {
+    try {
+      const photoSelected = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 1,
+        aspect: [4, 4],
+        allowsEditing: true,
+      })
+
+      if (photoSelected.canceled) {
+        return
+      }
+
+      const photoURI = photoSelected?.assets[0]?.uri
+
+      if (photoURI) {
+        const photoInfo = (await FileSystem.getInfoAsync(photoURI)) as {
+          size: number
+        }
+
+        if (photoInfo.size && photoInfo.size / 1024 / 1024 > 5) {
+          Alert.alert('A imagem não pode ser grande. A dimensão máxima é 5MB.')
+          return
+        }
+      }
+      setUserPhoto(photoURI)
+    } catch (e) {
+      console.log(e)
+    }
+  }
   return (
     <VStack flex={1}>
       <ScreenHeader title="Perfil" />
       <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
         <Center mt="$6" px="$10">
           <UserPhoto
-            source={{ uri: 'https://github.com/thiagoleite92.png' }}
+            source={{ uri: userPhoto }}
             alt="Imagem do Usuário"
             size="xl"
           />
 
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleUserPhotoSelect}>
             <Text
               color="$green500"
               fontFamily="$heading"
