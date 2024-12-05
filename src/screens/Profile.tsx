@@ -4,11 +4,14 @@ import { Button } from '@components/Button'
 import { Input } from '@components/Input'
 import { ScreenHeader } from '@components/ScreenHeader'
 import { UserPhoto } from '@components/UserPhoto'
-import { Text, Center, VStack, Heading } from '@gluestack-ui/themed'
+import { Text, Center, VStack, Heading, useToast } from '@gluestack-ui/themed'
 import { Alert, ScrollView, TouchableOpacity } from 'react-native'
 import { useState } from 'react'
+import { ToastMessage } from '@components/ToastMessage'
 
 export function Profile() {
+  const toast = useToast()
+
   const [userPhoto, setUserPhoto] = useState(
     'https://github.com/thiagoleite92.png',
   )
@@ -34,8 +37,18 @@ export function Profile() {
         }
 
         if (photoInfo.size && photoInfo.size / 1024 / 1024 > 5) {
-          Alert.alert('A imagem não pode ser grande. A dimensão máxima é 5MB.')
-          return
+          return toast.show({
+            placement: 'top',
+            render: ({ id }) => (
+              <ToastMessage
+                id={id}
+                title="Imagem muito grande"
+                description="O tamanho máximo da imagem é de 5MB"
+                onClose={() => toast.close(id)}
+                action="error"
+              />
+            ),
+          })
         }
       }
       setUserPhoto(photoURI)
@@ -46,6 +59,7 @@ export function Profile() {
   return (
     <VStack flex={1}>
       <ScreenHeader title="Perfil" />
+
       <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
         <Center mt="$6" px="$10">
           <UserPhoto
