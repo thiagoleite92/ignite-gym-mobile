@@ -20,6 +20,7 @@ import { AuthNavigatorRouterProps } from '@routes/auth.routes'
 import { api } from '@services/api'
 import { AppError } from '@utils/AppError'
 import { ToastMessage } from '@components/ToastMessage'
+import { useAuth } from '@hooks/useAuth'
 
 type SignUpFormProps = {
   name: string
@@ -44,6 +45,7 @@ const signUpSchema = yup.object({
 
 export function SignUp() {
   const { navigate } = useNavigation<AuthNavigatorRouterProps>()
+  const { signIn } = useAuth()
 
   const toast = useToast()
 
@@ -67,8 +69,8 @@ export function SignUp() {
 
   const handleSignUp = async ({ email, name, password }: SignUpFormProps) => {
     try {
-      const response = await api.post('/users', { name, email, password })
-      console.log(response?.data)
+      await api.post('/users', { name, email, password })
+      await signIn(email, password)
     } catch (error) {
       const isAppError = error instanceof AppError
 
