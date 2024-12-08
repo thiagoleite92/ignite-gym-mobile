@@ -24,7 +24,7 @@ export function Group({ name, isActive, ...props }: GroupsProps) {
     >
       <Text
         color={isActive ? '$green500' : '$gray200'}
-        transform="uppercase"
+        textTransform="uppercase"
         fontSize="$xs"
         fontFamily="$heading"
       >
