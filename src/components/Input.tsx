@@ -6,14 +6,17 @@ import {
   FormControlError,
 } from '@gluestack-ui/themed'
 import { ComponentProps } from 'react'
+import { TextInput } from 'react-native'
 
 type InputProps = ComponentProps<typeof InputField> & {
   isReadOnly?: boolean
   errorMessage?: string | null
   isInvalid?: boolean
+  inputRef?: React.RefObject<TextInput> | null
 }
 
 export function Input({
+  inputRef,
   errorMessage = null,
   isInvalid = false,
   isReadOnly = false,
@@ -39,14 +42,28 @@ export function Input({
           borderColor: '$red600',
         }}
       >
-        <InputField
-          px="$4"
-          bg="$gray700"
-          color="$white"
-          fontFamily="$body"
-          placeholderTextColor="$gray300"
-          {...rest}
-        />
+        {inputRef && (
+          <InputField
+            px="$4"
+            bg="$gray700"
+            color="$white"
+            fontFamily="$body"
+            placeholderTextColor="$gray300"
+            ref={inputRef}
+            {...rest}
+          />
+        )}
+
+        {!inputRef && (
+          <InputField
+            px="$4"
+            bg="$gray700"
+            color="$white"
+            fontFamily="$body"
+            placeholderTextColor="$gray300"
+            {...rest}
+          />
+        )}
       </GlueStackInput>
       <FormControlError>
         <FormControlErrorText>{errorMessage}</FormControlErrorText>
