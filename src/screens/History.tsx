@@ -42,7 +42,7 @@ export function History() {
     } finally {
       setIsLoading(false)
     }
-  }, [toast])
+  }, [])
 
   useFocusEffect(
     useCallback(() => {
@@ -56,9 +56,9 @@ export function History() {
 
       {isLoading && <Loading />}
 
-      {!isLoading && (
+      {!isLoading && history && (
         <SectionList
-          sections={history!}
+          sections={history}
           keyExtractor={(item) => item?.id}
           renderItem={({ item }) => <HistoryCard data={item} />}
           renderSectionHeader={({ section }) => (

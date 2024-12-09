@@ -50,14 +50,16 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   const storageUserAndTokenSave = async ({
     user: userData,
     token,
+    refreshToken,
   }: {
     user: UserDTO
     token: string
+    refreshToken: string
   }) => {
     try {
       setIsLoadingUserStorageData(true)
       await storageUserSave(userData)
-      await storageAuthTokenSave(token)
+      await storageAuthTokenSave({ token, refreshToken })
     } catch (error) {
     } finally {
       setIsLoadingUserStorageData(false)
@@ -68,11 +70,15 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     try {
       const { data } = await api.post('/sessions', { email, password })
 
-      if (data?.user && data?.token) {
+      if (data?.user && data?.token && data?.refresh_token) {
         setIsLoadingUserStorageData(true)
 
         userAndTokenUpdate(data)
-        storageUserAndTokenSave(data)
+        storageUserAndTokenSave({
+          token: data.token,
+          refreshToken: data.refresh_token,
+          user: data.user,
+        })
       }
     } catch (error) {
     } finally {
@@ -80,7 +86,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     }
   }
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       setIsLoadingUserStorageData(true)
       setUser({} as UserDTO)
@@ -101,17 +107,16 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         ),
       })
     }
-  }
+  }, [toast])
 
   const loadUserData = useCallback(async () => {
     try {
       setIsLoadingUserStorageData(true)
 
       const userLogged = await storageUserGet()
-      const token = await storageAuthTokenGet()
+      const { token } = await storageAuthTokenGet()
 
       if (userLogged && token) {
-        await storageUserAndTokenSave({ user: userLogged, token })
         userAndTokenUpdate({ user: userLogged, token })
       }
     } finally {
@@ -129,6 +134,14 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   useEffect(() => {
     loadUserData()
   }, [loadUserData])
+
+  useEffect(() => {
+    const subscribe = api.registerInterceptTokenManager(signOut)
+
+    return () => {
+      subscribe()
+    }
+  }, [signOut])
 
   const value = {
     user,

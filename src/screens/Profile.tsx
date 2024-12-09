@@ -15,6 +15,7 @@ import { useAuth } from '@hooks/useAuth'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { api } from '@services/api'
 import { AppError } from '@utils/AppError'
+import defaultUserPhoto from '@assets/userPhotoDefault.png'
 
 type FormProfileProps = {
   name: string
@@ -62,6 +63,9 @@ export function Profile() {
   const toast = useToast()
   const { user, updateUserProfile } = useAuth()
   const [isUpdating, setIsUpdating] = useState(false)
+  const oldPasswordRef = useRef<TextInput>(null)
+  const newPasswordRef = useRef<TextInput>(null)
+  const confirmNewPasswordRef = useRef<TextInput>(null)
 
   const {
     control,
@@ -71,16 +75,9 @@ export function Profile() {
     defaultValues: {
       name: user?.name,
       email: user?.email,
-      confirm_new_password: '',
-      new_password: '',
-      old_password: '',
     },
     resolver: yupResolver(formProfileSchema),
   })
-
-  const [userPhoto, setUserPhoto] = useState(
-    'https://github.com/thiagoleite92.png',
-  )
 
   const handleUserPhotoSelect = async () => {
     try {
@@ -117,14 +114,52 @@ export function Profile() {
           })
         }
       }
+
+      const fileExtension = photoURI?.split('.').pop()
+
+      const photoFile = {
+        name: `${user?.name}.${fileExtension}`?.toLowerCase(),
+        uri: photoURI,
+        type: `${photoSelected?.assets[0]?.type}/${fileExtension}`,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any
+
+      const userPhotoUploadForm = new FormData()
+
+      userPhotoUploadForm.append('avatar', photoFile)
+
+      const avatarUpdatedResponse = await api.patch(
+        '/users/avatar',
+        userPhotoUploadForm,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      )
+
+      toast.show({
+        render: ({ id }) => (
+          <ToastMessage
+            title="Foto atualizada"
+            id={id}
+            onClose={() => toast.close(id)}
+            action="success"
+          />
+        ),
+        placement: 'top',
+      })
+
+      const userUpdated = user
+
+      userUpdated.avatar = avatarUpdatedResponse?.data?.avatar
+      updateUserProfile(userUpdated)
+
       setUserPhoto(photoURI)
     } catch (e) {
       console.log(e)
     }
   }
-  const oldPasswordRef = useRef<TextInput>(null)
-  const newPasswordRef = useRef<TextInput>(null)
-  const confirmNewPasswordRef = useRef<TextInput>(null)
 
   const handleUpdateProfile = async (data: FormProfileProps) => {
     setIsUpdating(true)
@@ -184,7 +219,11 @@ export function Profile() {
       <ScrollView contentContainerStyle={{ paddingBottom: 36 }}>
         <Center mt="$6" px="$10">
           <UserPhoto
-            source={{ uri: userPhoto }}
+            source={
+              user?.avatar
+                ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
+                : defaultUserPhoto
+            }
             alt="Imagem do Usuário"
             size="xl"
           />
